@@ -1,0 +1,238 @@
+donnée hotel
+CREATE TABLE "DBA"."Hotel" (
+	"idhotel" INTEGER NOT NULL DEFAULT AUTOINCREMENT,
+	"nomhotel" CHAR(50) NULL,
+	"adresse" CHAR(50) NULL,
+	"codepostal" CHAR(5) NULL,
+	"prixch" INTEGER NULL,
+	"idville" INTEGER NULL,
+	CONSTRAINT "pkHotel" PRIMARY KEY ( "idhotel" ASC )
+) IN "system";
+
+idhotel,nomhotel,adresse,codepostal,prixch,idville
+1,'Mercure','39 allée du jura','1300',95,1
+2,'Novotel','25 allée des acacis','5000',83,2
+3,'Esterelle','45 avenue gerard','3000',105,3
+4,'Carlton','75 sur la croisette','1400',125,4
+5,'Formule 1','55 allee du leroy','5030',85,5
+6,'Mercure','48 rue general','5030',80,5
+7,'Mercure','place de l''université','1348',95,6
+8,'Formule 1','15 rue de la gare','5590',100,7
+9,'Novotel','place de l''hôtel de ville','1340',75,8
+10,'Novotel','10 rue Letroye','1300',85,1
+11,'Novotel','15 avenue du Cideau','1348',95,6
+12,'Mercure','10 rue des coteaux','6900',85,9
+
+
+donnée réservations
+CREATE TABLE "DBA"."Reservation" (
+	"idresv" INTEGER NOT NULL,
+	"nom" CHAR(50) NULL,
+	"prenom" CHAR(50) NULL,
+	"mail" CHAR(50) NULL,
+	"datedebut" DATE NULL,
+	"nbjour" INTEGER NULL,
+	"nbch" INTEGER NULL,
+	"idhotel" INTEGER NULL,
+	CONSTRAINT "pkReserv" PRIMARY KEY ( "idresv" ASC )
+) IN "system";
+
+idresv,nom,prenom,mail,datedebut,nbjour,nbch,idhotel
+1,'LAMBERT','Michaël','amos93@hotmail.com','2010-12-15',2,2,6
+2,'DUCAMPS','Micky','ducmic@gmail.com','2011-10-18',2,2,7
+3,'LAMBERT','Michaël','amos93@hotmail.com','2012-01-15',5,4,6
+4,'CALEBAUT','Nicole','calnic@yahoo.be','2010-08-12',1,2,6
+5,'CALEBAUT','Nicole','calnic@yahoo.be','2010-02-15',5,2,7
+6,'LAMBERT','Robert','robetlamb@ort.com','2010-08-12',7,2,9
+7,'VANGOU','Céline','cevege@gmail.com','2013-07-15',4,1,12
+8,'DEVILLE','Pierre',,'2011-08-01',3,2,11
+9,'DEVILLE','Pierre',,'2011-12-15',2,2,11
+10,'LAMBERT','Michaël','amos93@hotmail.com','2011-02-10',3,2,10
+11,'VANGOU','Céline','cevege@gmail.com','2013-02-15',3,1,1
+12,'VANGOU','Céline','cevege@gmail.com','2012-09-10',1,1,1
+
+donnée Villes
+CREATE TABLE "DBA"."Ville" (
+	"idville" INTEGER NOT NULL DEFAULT AUTOINCREMENT,
+	"nomville" CHAR(20) NULL,
+	"nomprovince" CHAR(20) NULL,
+	CONSTRAINT "pkVille" PRIMARY KEY ( "idville" ASC )
+) IN "system";
+
+idville,nomville,nomprovince
+1,'Wavre','Brabant Wallon'
+2,'Namur','Namur'
+3,'Leuven','Brabant Flamand'
+4,'Nivelles','Brabant Wallon'
+5,'Gembloux','Namur'
+6,Louvain-la-Neuve','Brabant Wallon'
+7,'Ciney','Namur'
+8,'Ottignies','Brabant Wallon'
+9,'Marche-en-Famenne','Luxembourg'
+
+def fenetre():
+    global tables, root
+    # creer notre fenêtre
+    root = Tk()
+    root.title("Treeview avec une base de données")
+
+    # création du widget treeview
+    tables = ttk.Treeview(root)
+    tables.grid(row=0, columnspan=4, sticky=N+E+S+W, padx=10, pady=10) # remplit toute la zone de root
+
+    # Déclaration des colonnes
+    tables["columns"] = ("col1", "col2", "col3", "col4","col5","col6")
+
+    # taille des colonnes
+    tables.column("#1", width=30, minwidth=30)
+    tables.column("#2", width=200, minwidth=200)
+    tables.column("#3", width=200, minwidth=200)
+    tables.column("#4", width=300, minwidth=300)
+    tables.column("#5", width=300, minwidth=300)
+    tables.column("#6", width=300, minwidth=300)
+
+    # entête ( titre ) de la colonne
+    tables.heading("col1", text="Réf", anchor=W)
+    tables.heading("col2", text="Nom", anchor=W)
+    tables.heading("col3", text="Adresse", anchor=W)
+    tables.heading("col4", text="Code Pastal", anchor=W)
+    tables.heading("col5", text="Prix chambre", anchor=W)
+    tables.heading("col6", text="Ville", anchor=W)
+
+    # Paramètré la scrollbar
+    ascenseurY = ttk.Scrollbar(root, orient=VERTICAL, command=tables.yview)
+    # positionné la scrollbar
+    ascenseurY.grid(row=0, column=5)
+
+    # configurer notre treeview
+    tables.config(show="headings", height=5, selectmode="browse", yscrollcommand=ascenseurY.set) # height c'est le nombre de lignes a affiché
+    remplisage()
+
+    # boutons
+    Button(root, text="Ajout").grid(row=1, column=0, padx=10,pady=10 , sticky=E+W)
+    Button(root, text="Modifier").grid(row=1, column=1, padx=10, sticky=E+W)
+    Button(root, text="Supprimer").grid(row=1, column=2, padx=10, sticky=E+W)
+    Button(root, text="Quitter", command=root.destroy).grid(row=1, column=3, padx=10, sticky=E+W)
+
+
+def remplisage():
+    global tables
+    # vider la liste
+    tables.delete(*tables.get_children())
+    # récupérer la liste de la db
+    cur.execute("SELECT * FROM Hotel")
+    hotels = cur.fetchall()
+    # Ajouter les hotels dans le treeview
+    for hotel in hotels:
+        tables.insert('', 'end', values=(hotel[0], hotel[1], hotel[2], hotel[3], hotel[4],hotel[5])
+def supprime():
+    global tables
+    if ( tables.focus() ):
+        nomhotel          = tables.item(tables.focus())["values"][1]
+        adresse       = tables.item(tables.focus())["values"][2]
+        idAsupprimer = tables.item(tables.focus())["values"][0]
+        confirm = askokcancel("Ok ou annuler", "Suppression de " + nomhotel + " " + adresse + " ?")
+        if confirm:
+            # supprimer le record
+            cur.execute("DELETE FROM Hotel WHERE idhotel = ?", (idAsupprimer,))
+            db.commit()
+            remplisage()
+    else:
+        showinfo("Attention", "Veuillez sélectionner \nune ligne avant de \nsupprimer")
+    # idhotel,nomhotel,adresse,codepostal,prixch,idville
+
+def ajoute():
+    global win
+    # création d'une fenêtre modal
+    win = Toplevel(root)
+    win.title("Ajout d'un utilisateur")
+
+    # Déclaration des variables du formulaire
+    nomhotel=StringVar()
+    adresse=StringVar()
+    codepostal=IntVar()
+    prixch= DoubleVar()
+
+    # etiquette
+    Label(win, text="Nom").grid(row=0, column=0, pady=5, padx=5)
+    Label(win, text="Adresse").grid(row=1, column=0, pady=5, padx=5)
+    Label(win, text="Code postal").grid(row=2, column=0, pady=5, padx=5)
+    Label(win, text="Prix chambre").grid(row=2, column=0, pady=5, padx=5)
+
+    # Les entrys
+    Entry(win, textvariable=nomhotel, width=30).grid(row=0, column=1, columnspan=2, padx=5)
+    Entry(win, textvariable=adresse, width=30).grid(row=1, column=1, columnspan=2, padx=5)
+    Entry(win, textvariable=codepostal, width=30).grid(row=2, column=1, columnspan=2, padx=5)
+    Entry(win, textvariable=prixch, width=30).grid(row=2, column=1, columnspan=2, padx=5)
+
+    # Boutons
+    Button(win, text="Ajouter", command=lambda:ajoutDb( nom.get(), prenom.get(), email.get() ) ).grid(row=3, column=1, padx=5, sticky=E+W)
+    Button(win, text="Annuler", command=win.destroy).grid(row=3, column=2, padx=5, pady=10, sticky=E+W)
+
+
+def ajoutDb(nomhotel,adresse,codepostal,prixch,idville):
+    global win,tables
+    win.destroy()
+    if nom != "" and prenom != "":
+        query = '''
+            INSERT INTO Hotel (nomhotel,adresse,codepostal,prixch,idville)
+                    VALUES (?, ?, ?, ?, ?)
+        '''
+        cur.execute(query, (nomhotel,adresse,codepostal,prixch,idville))
+        db.commit()
+        remplisage()
+
+
+def modifier():
+    global winM
+    # création d'une fenêtre modal
+    winM = Toplevel(root)
+    winM.title("Ajout d'un utilisateur")
+
+    # Déclaration des variables du formulaire
+    nomhotel = StringVar()
+    adresse = StringVar()
+    codepostal = IntVar()
+    prixch = DoubleVar()
+
+    # etiquette
+    Label(winM, text="Nom").grid(row=0, column=0, pady=5, padx=5)
+    Label(winM, text="Adresse").grid(row=1, column=0, pady=5, padx=5)
+    Label(winM, text="Code postal").grid(row=2, column=0, pady=5, padx=5)
+    Label(winM, text="Prix chambre").grid(row=2, column=0, pady=5, padx=5)
+
+    # Les entrys
+    Entry(winM, textvariable=nomhotel, width=30).grid(row=0, column=1, columnspan=2, padx=5)
+    Entry(winM, textvariable=adresse, width=30).grid(row=1, column=1, columnspan=2, padx=5)
+    Entry(winM, textvariable=codepostal, width=30).grid(row=2, column=1, columnspan=2, padx=5)
+    Entry(winM, textvariable=prixch, width=30).grid(row=2, column=1, columnspan=2, padx=5)
+
+    # Boutons
+    Button(winM, text="Modifier", command=lambda: modifDb(nom.get(), prenom.get(), email.get())).grid(row=3, column=1, padx=5,sticky=E + W)
+    Button(winM, text="Annuler", command=winM.destroy).grid(row=3, column=2, padx=5, pady=10, sticky=E + W)
+
+
+def modifDb(nomhotel,adresse,codepostal,prixch,idville):
+    global winM, idAmodifier
+    winM.destroy()
+    if nomhotel != "" and adresse !="":
+        query='''
+        UPDATE Hotel SET nomhotel=?, adresse=?, codepostal=?, prixch=?, idville=?  WHERE id=? '''
+        cur.execute(query, (nomhotel,adresse,codepostal,prixch,idville))
+        db.commit()
+        remplisage()
+
+
+def modif():
+    global tables, root, idAmodifier
+    if (tables.focus()) :
+        nomhotel = tables.item(tables.focus())["values"][1]
+        adresse = tables.item(tables.focus())["values"][2]
+        idAmodifier = tables.item(tables.focus())["values"][0]
+        confirm = askokcancel("Ok ou annuler", "Modifier" + " " + nomhotel + " " + adresse + " ?")
+        if confirm :
+            modifier()
+            db.commit()
+            remplisage()
+    else :
+        showinfo("Attention", "Veuillez sélectionner \nune ligne avant de \nmodifier")
